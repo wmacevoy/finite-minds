@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reason</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Domine:wght@500;700&family=Nunito+Sans:ital,wght@0,400;0,600;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F6F2EA; --panel: #FFFFFF; --ink: #1B2433; --muted: #5B6575; --line: #D9D2C4;
+    --accent: #A84E25; --accent-soft: #F3E1D3; --good: #2F6B4F; --good-soft: #DCEBE2;
+    --bad: #A3322B; --bad-soft: #F5DCD9; --given: #1B2433; --cell: #FFFFFF; --pencil: #8A93A3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141A25; --panel: #1B2433; --ink: #ECE6DA; --muted: #A5AEBC; --line: #344055;
+      --accent: #F0A26B; --accent-soft: #3A2C25; --good: #8FD0AE; --good-soft: #1F3A2F;
+      --bad: #F09A92; --bad-soft: #43262A; --given: #ECE6DA; --cell: #212B3B; --pencil: #7F8899;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141A25; --panel: #1B2433; --ink: #ECE6DA; --muted: #A5AEBC; --line: #344055;
+    --accent: #F0A26B; --accent-soft: #3A2C25; --good: #8FD0AE; --good-soft: #1F3A2F;
+    --bad: #F09A92; --bad-soft: #43262A; --given: #ECE6DA; --cell: #212B3B; --pencil: #7F8899;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 18px/1.6 'Nunito Sans', system-ui, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 16px 96px; }
+  h1, h2, h3 { font-family: 'Domine', Georgia, serif; line-height: 1.25; }
+  h1 { font-size: clamp(40px, 8vw, 64px); margin: 0 0 8px; }
+  h2 { font-size: 28px; margin: 64px 0 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+  h3 { font-size: 20px; margin: 28px 0 8px; }
+  .kicker { color: var(--accent); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-size: 14px; }
+  .lede { font-size: 21px; color: var(--muted); margin-top: 0; }
+  a { color: var(--accent); }
+  code, .mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: .9em; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 16px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  td.c, th.c { text-align: center; }
+  .scroll { overflow-x: auto; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 6px; margin: 18px 0; }
+  .callout.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .callout.good { background: var(--good-soft); border-color: var(--good); }
+  .callout p:first-child { margin-top: 0; } .callout p:last-child { margin-bottom: 0; }
+  .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 16px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .card h3 { margin-top: 0; }
+  .card .form { font-size: 15px; color: var(--muted); }
+  .card ol { padding-left: 1.2em; margin: 8px 0; }
+  .tag { display: inline-block; font-size: 13px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+  .tag.valid { background: var(--good-soft); color: var(--good); }
+  .tag.invalid { background: var(--bad-soft); color: var(--bad); }
+  .tag.risky { background: var(--accent-soft); color: var(--accent); }
+  .mistakes { display: grid; gap: 14px; margin-top: 16px; }
+  .mistake { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .mistake h3 { margin: 0 0 6px; }
+  .mistake p { margin: 6px 0; }
+  .mistake .fix { color: var(--good); }
+
+  /* 4x4 sudoku */
+  .lab { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; margin: 16px 0; }
+  .grid { display: grid; grid-template-columns: repeat(4, 64px); grid-template-rows: repeat(4, 64px);
+    border: 3px solid var(--ink); background: var(--ink); gap: 1px; flex: none; }
+  .cell { background: var(--cell); display: flex; align-items: center; justify-content: center; position: relative;
+    font: 700 30px 'Domine', Georgia, serif; color: var(--accent); }
+  .cell.given { color: var(--given); }
+  .cell.c1 { margin-right: 2px; } .cell.r1 { margin-bottom: 2px; }
+  .cell.hl { background: var(--accent-soft); }
+  .cell.why { background: var(--good-soft); }
+  .cell.alt { background: var(--bad-soft); }
+  .cell .pm { position: absolute; inset: 4px; display: grid; grid-template-columns: 1fr 1fr;
+    font: 600 13px 'Nunito Sans', sans-serif; color: var(--pencil); text-align: center; align-items: center; }
+  .cell input { width: 100%; height: 100%; border: 0; background: transparent; text-align: center;
+    font: inherit; color: inherit; outline: none; }
+  .cell input:focus { background: var(--accent-soft); }
+  .side { flex: 1; min-width: 240px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  button { font: 700 15px 'Nunito Sans', sans-serif; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--bg); }
+  button.ghost { background: transparent; color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  .log { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px;
+    min-height: 120px; font-size: 16px; }
+  .log ol { margin: 0; padding-left: 1.3em; }
+  .log li { margin: 4px 0; }
+  .status { font-weight: 700; margin: 8px 0 0; }
+  .status.good { color: var(--good); } .status.bad { color: var(--bad); }
+  footer { margin-top: 64px; color: var(--muted); font-size: 15px; }
+  @media (max-width: 420px) {
+    .grid { grid-template-columns: repeat(4, 56px); grid-template-rows: repeat(4, 56px); }
+    body { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<main>
+<p class="kicker">Finite Minds · Lecture notes</p>
+<h1>Reason</h1>
+<p class="lede">Reasoning with certainty, reasoning with uncertainty, and the most common mistake: treating “this explains it” as “this is the only answer.”</p>
+
+<h2>1. Reasoning with certainty</h2>
+<p>Start with statements that are simply true or false. Call two of them <em>p</em> and <em>q</em>. Every compound statement is defined by when it is true, and it’s easiest to remember each one by the single case that makes it come out differently.</p>
+<div class="scroll"><table>
+  <tr><th>Statement</th><th>The rule to remember</th><th class="c">p=T q=T</th><th class="c">T F</th><th class="c">F T</th><th class="c">F F</th></tr>
+  <tr><td>not p</td><td>true only when p is false</td><td class="c" colspan="2">F</td><td class="c" colspan="2">T</td></tr>
+  <tr><td>p and q</td><td>true only when both are true</td><td class="c">T</td><td class="c">F</td><td class="c">F</td><td class="c">F</td></tr>
+  <tr><td>p or q</td><td>false only when both are false</td><td class="c">T</td><td class="c">T</td><td class="c">T</td><td class="c">F</td></tr>
+  <tr><td>p implies q</td><td>false only when p is true and q is false</td><td class="c">T</td><td class="c">F</td><td class="c">T</td><td class="c">T</td></tr>
+  <tr><td>p equals q</td><td>p and q are true or false together</td><td class="c">T</td><td class="c">F</td><td class="c">F</td><td class="c">T</td></tr>
+</table></div>
+<p>Look at the “p implies q” row. When q is true, the implication holds <em>whether p is true or false</em>. Knowing q tells you nothing about p. Nearly every mistake in these notes comes back to that one column.</p>
+<p>There are only two valid ways to use an implication:</p>
+<ul>
+  <li><strong>Modus ponens:</strong> p implies q, and p is true, so q is true.</li>
+  <li><strong>Modus tollens:</strong> p implies q, and q is false, so p is false.</li>
+</ul>
+<p>Two moves look just like these but are invalid:</p>
+<ul>
+  <li><strong>Affirming the consequent:</strong> p implies q, and q is true, “so p is true.”</li>
+  <li><strong>Denying the antecedent:</strong> p implies q, and p is false, “so q is false.”</li>
+</ul>
+
+<h2>2. Three ways to reason</h2>
+<p>Charles Sanders Peirce (1878) separated reasoning into three kinds by which part of an argument you know and which part you conclude. His example was a bag of beans; here it is next to a sudoku version.</p>
+<div class="modes">
+  <div class="card">
+    <h3>Deduction <span class="tag valid">certain</span></h3>
+    <p class="form">Rule + case → result</p>
+    <ol>
+      <li>Every row holds 1, 2, 3, 4 once.</li>
+      <li>This row already has 3, 4 and 2.</li>
+      <li>So the empty cell is 1.</li>
+    </ol>
+    <p>If the premises are true, the conclusion cannot be false. It adds no new information; it makes visible what the premises already contained.</p>
+  </div>
+  <div class="card">
+    <h3>Induction <span class="tag risky">probable</span></h3>
+    <p class="form">Cases + results → rule</p>
+    <ol>
+      <li>I solved 50 puzzles using only “one candidate left.”</li>
+      <li>Every one worked.</li>
+      <li>So that move solves every puzzle.</li>
+    </ol>
+    <p>The conclusion goes beyond the evidence. One counterexample ends it, and puzzle B below is one.</p>
+  </div>
+  <div class="card">
+    <h3>Abduction <span class="tag risky">plausible</span></h3>
+    <p class="form">Rule + result → case</p>
+    <ol>
+      <li>A solution satisfies every row, column and box.</li>
+      <li>My filled grid satisfies every row, column and box.</li>
+      <li>So my grid is <em>the</em> solution.</li>
+    </ol>
+    <p>This is inference to an explanation. It is how hypotheses get made, and as a proof it is invalid: it has the form of affirming the consequent.</p>
+  </div>
+</div>
+<div class="callout bad">
+  <p><strong>The central mistake:</strong> doing abduction and reporting it as deduction. “My answer fits all the facts” gets upgraded to “my answer is the only one that fits.” The first claim is checked against the facts. The second is a claim about <em>every other possible answer</em>, and usually nobody checked those.</p>
+</div>
+<p>Induction and abduction are not bad reasoning. Science runs on them. The error is in the <em>label</em>: forgetting that a conclusion is a guess that has survived, not a guarantee.</p>
+
+<h2>3. A working case: pure deduction</h2>
+<p>A 4×4 sudoku: each row, column and 2×2 box holds 1–4 exactly once. Pencil marks show the candidates each empty cell still has. Step through it. Every move is modus ponens: “if only one digit is left here, this cell is that digit.”</p>
+<div class="lab" id="labA">
+  <div class="grid" id="gridA"></div>
+  <div class="side">
+    <div class="buttons">
+      <button id="stepA">Next deduction</button>
+      <button class="ghost" id="resetA">Reset</button>
+    </div>
+    <div class="log" id="logA"><ol></ol></div>
+    <p class="status" id="statusA"></p>
+  </div>
+</div>
+<p>Every step is forced, so the finished grid is <em>proved</em>, not guessed. There was no point where we said “try this and see.” That is why deduction can claim uniqueness: at each step, every other digit was ruled out.</p>
+
+<h2>4. The trap: a solution that is not the solution</h2>
+<p>Here is a puzzle that looks just as harmless. Try it: type digits into the empty cells. Use “Forced moves” to apply every deduction that is actually certain, and watch where it stops.</p>
+<div class="lab" id="labB">
+  <div class="grid" id="gridB"></div>
+  <div class="side">
+    <div class="buttons">
+      <button id="forceB">Forced moves</button>
+      <button id="checkB">Check my grid</button>
+      <button id="otherB">Is it the only one?</button>
+      <button class="ghost" id="resetB">Reset</button>
+    </div>
+    <div class="log" id="logB"><ol></ol></div>
+    <p class="status" id="statusB"></p>
+  </div>
+</div>
+<p>Deduction stops with four cells in a rectangle, each down to the candidates {1, 3}. Nothing forces the next move, so you guess. The guess “works”: every row, column and box checks out. It is natural to conclude you have found the answer.</p>
+<p>But there are two answers. Swap the 1s and 3s in the rectangle and the grid is still valid. Sudoku players call this a <strong>deadly pattern</strong>. Your grid is <em>a</em> solution. The claim that it is <em>the</em> solution was never tested.</p>
+<div class="callout">
+  <p><strong>What a proof would need.</strong> To claim “this is the only solution,” you have to rule out every alternative. That means either a chain of forced moves (section 3) or an exhaustive search that finds no second answer. Checking your own answer only shows that your answer works. It doesn’t show that no other answer works.</p>
+</div>
+<p>Newspaper puzzles are built to have exactly one solution, and good solvers use that as a premise. The “unique rectangle” technique rules out a candidate <em>because</em> it would create a deadly pattern. That is valid only because uniqueness is <em>given by the setter</em>. Uniqueness is a premise you were handed, never a conclusion you get from having found an answer.</p>
+
+<h2>5. A field guide to common mistakes</h2>
+<div class="mistakes">
+  <div class="mistake">
+    <h3>“It fits, so it’s the answer.” <span class="tag invalid">affirming the consequent</span></h3>
+    <p>If H is true, we would see E. We see E. “So H.” But other hypotheses also predict E.</p>
+    <p><em>Sudoku:</em> the guessed grid in puzzle B. <em>Life:</em> “If he were guilty he’d be nervous; he’s nervous.”</p>
+    <p class="fix"><strong>Fix:</strong> ask “what else would produce exactly this?” before asking “does mine fit?”</p>
+  </div>
+  <div class="mistake">
+    <h3>“I couldn’t think of another, so there isn’t one.” <span class="tag invalid">false uniqueness</span></h3>
+    <p>Failing to find an alternative is a fact about your search, not about the world. It becomes evidence only to the extent that the search was thorough.</p>
+    <p><em>Sudoku:</em> stopping at the first valid grid. Press “Is it the only one?” to see the search you skipped.</p>
+    <p class="fix"><strong>Fix:</strong> say how you searched. “Only solution” needs an exhaustive search or a proof; otherwise say “a solution.”</p>
+  </div>
+  <div class="mistake">
+    <h3>“It has always worked.” <span class="tag risky">hasty induction</span></h3>
+    <p>Many confirming cases never prove a universal rule. A single counterexample refutes it.</p>
+    <p><em>Sudoku:</em> “naked singles solve everything” holds until puzzle B. <em>Life:</em> every turkey’s data says the farmer brings food every morning, until the day before Thanksgiving.</p>
+    <p class="fix"><strong>Fix:</strong> hunt for the counterexample on purpose; one disconfirming case outweighs a hundred confirming ones.</p>
+  </div>
+  <div class="mistake">
+    <h3>“No contradiction yet, so it’s right.” <span class="tag invalid">confusing survival with proof</span></h3>
+    <p>Proof by contradiction is valid: assume X, derive something impossible, conclude not-X. The reverse isn’t: assuming X and <em>not</em> hitting a contradiction doesn’t prove X.</p>
+    <p><em>Sudoku:</em> a guess that leads to a contradiction is eliminated with certainty. A guess that leads to a full grid has only survived.</p>
+    <p class="fix"><strong>Fix:</strong> keep track of whether a conclusion was <em>derived</em> or <em>survived</em>.</p>
+  </div>
+  <div class="mistake">
+    <h3>“It must be one of these.” <span class="tag invalid">false dichotomy</span></h3>
+    <p>Elimination (“not A, so B”) is deduction only when the list of options is complete. An incomplete list makes the conclusion invalid however carefully you eliminate.</p>
+    <p><em>Sudoku:</em> a pencil mark you forgot to write, or erased by mistake, sends every later deduction off a cliff.</p>
+    <p class="fix"><strong>Fix:</strong> check the list of options as hard as you check the elimination.</p>
+  </div>
+  <div class="mistake">
+    <h3>“If p makes q likely, q makes p likely.” <span class="tag invalid">confusing the converse</span></h3>
+    <p>This is the probabilistic version of affirming the consequent. P(evidence | hypothesis) and P(hypothesis | evidence) can be wildly different.</p>
+    <p><em>Life:</em> most people with a disease test positive, yet most positive tests for a rare disease come from healthy people.</p>
+    <p class="fix"><strong>Fix:</strong> Bayes’ rule (section 6) forces you to include how common each explanation was to begin with.</p>
+  </div>
+  <div class="mistake">
+    <h3>“Multiply the chances.” <span class="tag invalid">assuming independence</span></h3>
+    <p>The simple probability rules in section 6 hold only when the events don’t influence each other. Constraints, shared causes and logical overlap all break independence.</p>
+    <p><em>Sudoku:</em> see the example at the end of section 6.</p>
+    <p class="fix"><strong>Fix:</strong> before multiplying, ask “does knowing one change the other?”</p>
+  </div>
+</div>
+
+<h2>6. Reasoning with uncertainty</h2>
+<p>Now let statements be true with a probability: p is true with probability P(p), where 0 ≤ P(p) ≤ 1. The general case is hard. If p and q are <strong>independent</strong>, every connective has a simple formula.</p>
+<div class="scroll"><table>
+  <tr><th>Statement</th><th>If p and q are independent</th><th>Always true (no assumption)</th></tr>
+  <tr><td>not p</td><td colspan="2">1 − P(p)</td></tr>
+  <tr><td>p and q</td><td>P(p) · P(q)</td><td>P(p) · P(q | p)</td></tr>
+  <tr><td>p or q</td><td>P(p) + P(q) − P(p) · P(q)</td><td>P(p) + P(q) − P(p and q)</td></tr>
+  <tr><td>p implies q</td><td>1 − P(p) · (1 − P(q))</td><td>1 − P(p and not q)</td></tr>
+  <tr><td>p equals q</td><td>P(p) · P(q) + (1 − P(p)) · (1 − P(q))</td><td>P(p and q) + P(not p and not q)</td></tr>
+</table></div>
+<p>Set the probabilities to 0 and 1 and these collapse back to the truth table in section 1. Certainty is just the special case.</p>
+
+<h3>A trap hiding in “p equals q”</h3>
+<p>It is tempting to write “p equals q” as “(p implies q) and (q implies p)” and multiply:</p>
+<p class="mono">P(p equals q) =? [1 − P(p)(1 − P(q))] · [1 − P(q)(1 − P(p))]</p>
+<p>The logic is right but the arithmetic isn’t, because the two implications are about the same p and q, so they are <em>not</em> independent of each other. Try P(p) = P(q) = ½ with p and q independent. The four cases are equally likely, and p equals q in two of them, so the answer is <strong>0.5</strong>. The product gives (¾)(¾) = <strong>0.5625</strong>. The table’s formula adds the two ways p and q can agree: ¼ + ¼ = 0.5.</p>
+<p>The lesson: “p and q are independent” does <em>not</em> make every formula built from p and q independent of every other one.</p>
+
+<h3>Independence in sudoku</h3>
+<p>In puzzle B, row 1 has three empty cells that must hold 1, 2 and 3. Ask: what is the chance that row 1 contains no 1?</p>
+<ul>
+  <li><strong>Naive:</strong> each cell is 1 with probability ⅓, so each misses with probability ⅔. Multiplying gives (⅔)³ ≈ <strong>0.30</strong>.</li>
+  <li><strong>Correct:</strong> the rule says the row contains a 1. The cells are not independent; once one cell is 1, the others cannot be. The probability is <strong>0</strong>.</li>
+</ul>
+<p>Constraints are exactly what independence ignores. A system with rules, whether a puzzle, an ecosystem or an economy, is the place where multiplying probabilities most often goes wrong.</p>
+
+<h3>Abduction done honestly: Bayes</h3>
+<p>Uncertain reasoning can repair abduction instead of banning it. Rather than “E fits H, so H,” compare every candidate explanation:</p>
+<p class="mono">P(H | E) = P(E | H) · P(H) / Σ over all H′ of P(E | H′) · P(H′)</p>
+<p>The denominator is the alternatives you were tempted to skip. If any other H′ explains E about as well and is about as likely to begin with, your confidence in H should be split, not total. In puzzle B, the two grids explain the clues equally well, so “my grid” deserves 50%, not 100%. Saying “this is the only solution” means claiming every other term in the sum is zero, and that is something you have to show.</p>
+
+<h2>7. Questions for discussion</h2>
+<ol>
+  <li>Find a news story that claims “the cause” of something. Is the argument deduction, induction or abduction? What alternatives were ruled out, and how?</li>
+  <li>Add one clue to puzzle B so it has exactly one solution. Which cells work, and why do those break the deadly pattern?</li>
+  <li>A detective “deduces” that the guest is a sailor from his tan and walk. Rewrite the argument honestly. Which kind of reasoning is it?</li>
+  <li>When is “I searched and found nothing” strong evidence that nothing is there? Compare a 4×4 sudoku with a search for life on other planets.</li>
+  <li>Give two events in your own life that you treat as independent but probably aren’t.</li>
+</ol>
+
+<footer>
+  <p><strong>Sources and further reading.</strong> C. S. Peirce, “Deduction, Induction, and Hypothesis,” <em>Popular Science Monthly</em> 13 (1878). Peter Lipton, <em>Inference to the Best Explanation</em>, 2nd ed. (Routledge, 2004). P. C. Wason, “Reasoning about a rule,” <em>Quarterly Journal of Experimental Psychology</em> 20 (1968), the selection task, in which most people skip modus tollens. Bertrand Russell, <em>The Problems of Philosophy</em> (1912), ch. 6, the chicken that the farmer feeds every day (here, a turkey).</p>
+  <p>Part of <a href="https://github.com/wmacevoy/finite-minds">Finite Minds</a>.</p>
+</footer>
+</main>
+
+<script>
+// 4x4 sudoku helpers. Cells are numbered 0..15 row by row; 0 means empty.
+const name = i => `r${Math.floor(i / 4) + 1}c${i % 4 + 1}`;
+const UNITS = [];
+for (let r = 0; r < 4; r++) UNITS.push({ kind: 'row', label: `row ${r + 1}`, cells: [0, 1, 2, 3].map(c => r * 4 + c) });
+for (let c = 0; c < 4; c++) UNITS.push({ kind: 'column', label: `column ${c + 1}`, cells: [0, 1, 2, 3].map(r => r * 4 + c) });
+for (let b = 0; b < 4; b++) {
+  const r0 = Math.floor(b / 2) * 2, c0 = (b % 2) * 2;
+  UNITS.push({ kind: 'box', label: `box ${b + 1}`, cells: [r0 * 4 + c0, r0 * 4 + c0 + 1, (r0 + 1) * 4 + c0, (r0 + 1) * 4 + c0 + 1] });
+}
+const unitsOf = i => UNITS.filter(u => u.cells.includes(i));
+const peers = i => [...new Set(unitsOf(i).flatMap(u => u.cells))].filter(j => j !== i);
+
+function candidates(g, i) {
+  if (g[i]) return [];
+  const seen = new Set(peers(i).map(j => g[j]));
+  return [1, 2, 3, 4].filter(v => !seen.has(v));
+}
+
+// The next certain move, with the reason in words.
+function nextDeduction(g) {
+  for (let i = 0; i < 16; i++) {
+    const c = candidates(g, i);
+    if (!g[i] && c.length === 1) {
+      const gone = [1, 2, 3, 4].filter(v => v !== c[0]).map(v => {
+        const u = unitsOf(i).find(u => u.cells.some(j => g[j] === v));
+        return `${v} (${u.label})`;
+      });
+      const why = peers(i).filter(j => g[j]);
+      return { cell: i, value: c[0], why, text: `${name(i)} = ${c[0]}: it can't be ${gone.join(', ')}. Only ${c[0]} is left.` };
+    }
+  }
+  for (const u of UNITS) {
+    for (let v = 1; v <= 4; v++) {
+      if (u.cells.some(j => g[j] === v)) continue;
+      const spots = u.cells.filter(j => candidates(g, j).includes(v));
+      if (spots.length === 1) {
+        const i = spots[0];
+        return { cell: i, value: v, why: u.cells.filter(j => j !== i), text: `${name(i)} = ${v}: ${u.label} needs a ${v}, and every other cell there is filled or already sees a ${v}.` };
+      }
+    }
+  }
+  return null;
+}
+
+function* solutions(g) {
+  const i = g.indexOf(0);
+  if (i < 0) { yield g.slice(); return; }
+  for (const v of candidates(g, i)) { g[i] = v; yield* solutions(g); g[i] = 0; }
+  g[i] = 0;
+}
+const allSolutions = g => [...solutions(g.slice())];
+
+function validComplete(g) {
+  if (g.includes(0)) return false;
+  return UNITS.every(u => new Set(u.cells.map(j => g[j])).size === 4);
+}
+
+function draw(el, givens, g, opts = {}) {
+  el.innerHTML = '';
+  for (let i = 0; i < 16; i++) {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    if (i % 4 === 1) d.classList.add('c1');
+    if (Math.floor(i / 4) === 1) d.classList.add('r1');
+    if (givens[i]) d.classList.add('given');
+    if (opts.hl === i) d.classList.add('hl');
+    if (opts.why && opts.why.includes(i)) d.classList.add('why');
+    if (opts.alt && opts.alt.includes(i)) d.classList.add('alt');
+    if (g[i]) {
+      if (opts.editable && !givens[i]) d.appendChild(input(i, g[i], opts));
+      else d.textContent = g[i];
+    } else if (opts.editable) {
+      d.appendChild(input(i, '', opts));
+      d.appendChild(pencil(g, i));
+    } else {
+      d.appendChild(pencil(g, i));
+    }
+    el.appendChild(d);
+  }
+}
+
+function pencil(g, i) {
+  const pm = document.createElement('div');
+  pm.className = 'pm';
+  pm.setAttribute('aria-hidden', 'true');
+  const c = candidates(g, i);
+  pm.innerHTML = [1, 2, 3, 4].map(v => `<span>${c.includes(v) ? v : ''}</span>`).join('');
+  pm.style.pointerEvents = 'none';
+  return pm;
+}
+
+function input(i, v, opts) {
+  const inp = document.createElement('input');
+  inp.inputMode = 'numeric';
+  inp.maxLength = 1;
+  inp.value = v;
+  inp.setAttribute('aria-label', name(i));
+  inp.addEventListener('input', () => {
+    const n = parseInt(inp.value, 10);
+    opts.onChange(i, n >= 1 && n <= 4 ? n : 0);
+  });
+  return inp;
+}
+
+function log(el, text) {
+  const li = document.createElement('li');
+  li.textContent = text;
+  el.querySelector('ol').appendChild(li);
+}
+
+// Puzzle A: every step is forced.
+(function () {
+  const givens = [0,0,0,0, 3,4,0,2, 0,1,4,0, 0,0,0,0];
+  const grid = document.getElementById('gridA'), logEl = document.getElementById('logA');
+  const status = document.getElementById('statusA'), step = document.getElementById('stepA');
+  let g;
+  function reset() {
+    g = givens.slice();
+    logEl.querySelector('ol').innerHTML = '';
+    status.textContent = '';
+    step.disabled = false;
+    draw(grid, givens, g);
+  }
+  step.onclick = () => {
+    const d = nextDeduction(g);
+    if (!d) return;
+    g[d.cell] = d.value;
+    log(logEl, d.text);
+    draw(grid, givens, g, { hl: d.cell, why: d.why });
+    if (!g.includes(0)) {
+      step.disabled = true;
+      status.className = 'status good';
+      status.textContent = `Solved in ${logEl.querySelectorAll('li').length} forced steps. No guesses, so this is the only solution.`;
+    }
+  };
+  document.getElementById('resetA').onclick = reset;
+  reset();
+})();
+
+// Puzzle B: deduction runs out, and the guess has a twin.
+(function () {
+  const givens = [0,0,0,4, 0,0,0,2, 2,0,0,3, 0,3,0,1];
+  const grid = document.getElementById('gridB'), logEl = document.getElementById('logB');
+  const status = document.getElementById('statusB');
+  let g, opts = {};
+  const say = (cls, text) => { status.className = 'status ' + cls; status.textContent = text; };
+  function redraw(extra = {}) { draw(grid, givens, g, { editable: true, onChange, ...extra }); }
+  function onChange(i, v) {
+    g[i] = v;
+    say('', '');
+    // Redraw only pencil marks so typing keeps focus.
+    grid.querySelectorAll('.cell').forEach((d, j) => {
+      const pm = d.querySelector('.pm');
+      if (g[j]) { if (pm) pm.remove(); }
+      else if (!givens[j]) { if (pm) pm.replaceWith(pencil(g, j)); else d.appendChild(pencil(g, j)); }
+      d.classList.remove('alt', 'hl', 'why');
+    });
+  }
+  function reset() {
+    g = givens.slice();
+    logEl.querySelector('ol').innerHTML = '';
+    say('', '');
+    redraw();
+  }
+  document.getElementById('forceB').onclick = () => {
+    let d, n = 0;
+    while ((d = nextDeduction(g))) { g[d.cell] = d.value; log(logEl, d.text); n++; }
+    const open = g.map((v, i) => v ? -1 : i).filter(i => i >= 0);
+    if (!open.length) { redraw(); say('good', 'Full grid.'); return; }
+    redraw({ alt: open });
+    log(logEl, `No forced move left. ${open.map(i => `${name(i)} ∈ {${candidates(g, i).join(', ')}}`).join('; ')}.`);
+    say('bad', `Deduction stops${n ? ` after ${n} step${n > 1 ? 's' : ''}` : ''}. Any next move is a guess.`);
+  };
+  document.getElementById('checkB').onclick = () => {
+    if (g.includes(0)) { say('bad', 'Not finished. Fill every cell first (guess if you must).'); return; }
+    if (!validComplete(g)) { say('bad', 'Some row, column or box repeats a digit.'); return; }
+    say('good', 'Every row, column and box checks out. You have a solution. But is it the solution?');
+  };
+  document.getElementById('otherB').onclick = () => {
+    const sols = allSolutions(givens);
+    const done = validComplete(g);
+    const other = done ? sols.find(s => s.some((v, i) => v !== g[i])) : sols[1];
+    if (!done) {
+      say('bad', `Exhaustive search of the clues finds ${sols.length} solutions. Fill in yours and press again.`);
+      return;
+    }
+    const diff = other.map((v, i) => v !== g[i] ? i : -1).filter(i => i >= 0);
+    log(logEl, `Search found ${sols.length} solutions. Another one differs from yours at ${diff.map(name).join(', ')}.`);
+    g = other.slice();
+    redraw({ alt: diff });
+    say('bad', `No. Here is a second grid that satisfies every rule. The red cells changed: a 1/3 swap. Your answer explained the clues; it was never the only explanation.`);
+  };
+  document.getElementById('resetB').onclick = reset;
+  reset();
+})();
+</script>
+</body>
+</html>
