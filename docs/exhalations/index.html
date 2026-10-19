@@ -9,9 +9,10 @@
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
     font-family: 'Nunito Sans', Arial, sans-serif; overflow: hidden; }
   #viewport { position: absolute; inset: 0 0 40px 0; display: flex; align-items: center; justify-content: center; }
-  #stage { position: relative; width: 1920px; height: 1080px; transform-origin: center center; overflow: hidden; }
-  #stage > section { position: absolute; inset: 0; box-sizing: border-box; display: none; }
-  #stage > section.active { display: flex; }
+  #stage { position: relative; flex: none; width: 1920px; height: 1080px; transform-origin: center center; overflow: hidden; }
+  #stage > section { position: absolute; inset: 0; box-sizing: border-box; }
+  /* Slides carry their own inline display, so hiding needs !important. */
+  #stage > section:not(.active) { display: none !important; }
   #stage section * { margin: 0; box-sizing: border-box; }
   #stage section ul { padding-left: 1.2em; display: flex; flex-direction: column; gap: 0.5em; }
   #stage section aside { display: none !important; }
@@ -42,8 +43,8 @@
   <button id="fullscreen">Full screen</button>
 </div>
 <script>
-// Viewer for the deck in ./project: deck.json gives the order and fonts,
-// project/slides/<id>.html holds one <section> per slide.
+// Viewer for this deck: deck.json gives the order and fonts,
+// slides/<id>.html holds one <section> per slide.
 const ICONS = {
   Cloud: '<path d="M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 9.1 4.5 4.5 0 0 0 7 18z"/>',
   Clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -107,7 +108,7 @@ function show(i) {
 }
 
 async function load() {
-  const deck = await (await fetch('project/deck.json')).json();
+  const deck = await (await fetch('deck.json')).json();
   document.title = deck.title || document.title;
   for (const face of Object.values(deck.faces || {})) {
     if (face.href) {
@@ -118,7 +119,7 @@ async function load() {
     }
   }
   const texts = await Promise.all(deck.order.map(id =>
-    fetch(`project/slides/${id}.html`).then(r => r.ok ? r.text() : '')));
+    fetch(`slides/${id}.html`).then(r => r.ok ? r.text() : '')));
   texts.forEach((html, k) => {
     const tpl = document.createElement('template');
     tpl.innerHTML = html.trim();
