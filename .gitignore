@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Midjourney originals; the deck uses the JPEG copies
+docs/exhalations/images/*.png

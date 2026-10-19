@@ -32,6 +32,6 @@ To keep the four people consistent between the opening and closing collages, pas
 | `finale-newborn.png` | a Latino father on a porch at dusk holding his newborn wrapped in a blanket, both breathing in the cool air |
 | `finale-tree.png` | a single large oak at sunrise, mist rising from its leaves into golden light |
 | `finale-whale.png` | a humpback whale surfacing and exhaling a tall spout, calm sea, soft morning light |
-| `finale-storm.png` | a thunderstorm rolling over a small town, rain curtains, one lightning bolt, warm window lights below |
+| `finale-rain.png` | a couple holding hands under umbrellas, walking down a rainy city street at dusk (replaced the original storm-over-a-town idea) |
 
 The people's backgrounds are suggestions to make the group visibly diverse; change them freely.

@@ -79,8 +79,13 @@ function shapeSvg(kind, fill) {
   return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%"><path d="${d}" fill="${fill}"/></svg>`;
 }
 
-// Turn the deck's custom elements into plain SVG so a browser can draw them.
-function upgrade(section) {
+// Turn the deck's custom elements into plain SVG so a browser can draw them,
+// and point uploaded-asset URLs (/_blob/<id>) at the local copies in images/.
+function upgrade(section, images) {
+  section.querySelectorAll('img').forEach(el => {
+    const local = images[el.getAttribute('src')];
+    if (local) el.setAttribute('src', local);
+  });
   section.querySelectorAll('x-icon').forEach(el => {
     el.innerHTML = iconSvg(el.getAttribute('name'), el.style.color || 'currentColor');
   });
@@ -118,6 +123,7 @@ async function load() {
       document.head.appendChild(link);
     }
   }
+  const images = await fetch('images/manifest.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
   const texts = await Promise.all(deck.order.map(id =>
     fetch(`slides/${id}.html`).then(r => r.ok ? r.text() : '')));
   texts.forEach((html, k) => {
@@ -125,7 +131,7 @@ async function load() {
     tpl.innerHTML = html.trim();
     const section = tpl.content.querySelector('section') || document.createElement('section');
     if (!section.id) section.id = deck.order[k];
-    upgrade(section);
+    upgrade(section, images);
     stage.appendChild(section);
   });
   slides = [...stage.querySelectorAll(':scope > section')];
