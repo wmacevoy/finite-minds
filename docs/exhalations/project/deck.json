@@ -1,0 +1,18 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-10-19T14:20:00Z"},
+  "lists": "css",
+  "title": "Every Breath",
+  "order": ["cover", "one-breath", "question", "lorenz", "ladder", "two-weeks", "chiang", "weather-to-birth", "lottery", "sibling", "timeline", "births", "honest", "finale", "sources"],
+  "sections": {
+    "s1": {"description": "One breath, and the question of whether it matters.", "start": "cover"},
+    "s2": {"description": "How the atmosphere amplifies a breath until the weather everywhere is different.", "start": "lorenz"},
+    "s3": {"description": "How different weather means different people are born.", "start": "chiang"},
+    "s4": {"description": "What it means, what is still debated, and who depends on every breath.", "start": "births"}
+  },
+  "faces": {
+    "domine": {"family": "Domine", "href": "https://fonts.googleapis.com/css2?family=Domine:wght@400..700&display=swap"},
+    "nunito-sans": {"family": "Nunito Sans", "href": "https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap"}
+  },
+  "designSystems": []
+}
